@@ -1,0 +1,30 @@
+{
+  "name": "marcelo-ferreira-fotografia",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Site e painel administrativo de Marcelo Ferreira Fotografia",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build -w @mf/shared",
+    "dev": "npm run build:shared && concurrently -k -n shared,api,web -c gray,blue,magenta \"npm run dev -w @mf/shared\" \"npm run start:dev -w @mf/api\" \"npm run dev -w @mf/web\"",
+    "dev:api": "npm run start:dev -w @mf/api",
+    "dev:web": "npm run dev -w @mf/web",
+    "build": "npm run build:shared && npm run build -w @mf/api && npm run build -w @mf/web",
+    "db:setup": "npm run db:setup -w @mf/api",
+    "db:migrate": "npm run db:migrate -w @mf/api",
+    "db:seed": "npm run db:seed -w @mf/api",
+    "db:studio": "npm run db:studio -w @mf/api",
+    "lint": "npm run lint -w @mf/api && npm run lint -w @mf/web",
+    "test": "npm run test -w @mf/api",
+    "typecheck": "npm run build:shared && tsc -p apps/api/tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

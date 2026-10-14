@@ -1,0 +1,196 @@
+// ARQUIVO GERADO por scripts/prisma-schemas.mjs — NÃO EDITE.
+// Edite prisma/models.prisma e rode `npm run prisma:schemas`.
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../../src/infrastructure/database/generated/prisma"
+  moduleFormat           = "esm"
+  importFileExtension    = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FONTE ÚNICA DOS MODELOS.
+// Edite APENAS este arquivo. `npm run prisma:schemas` gera
+//   prisma/sqlite/schema.prisma      (desenvolvimento)
+//   prisma/postgresql/schema.prisma  (produção / Supabase)
+// acrescentando o bloco `generator` + `datasource` de cada banco.
+//
+// Regras para manter os dois bancos compatíveis:
+//   • enums do domínio são guardados como String (validados na camada de domínio);
+//   • listas e objetos são guardados como String JSON (serializados no repositório);
+//   • nada de tipos nativos específicos (@db.*).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Identidade ───────────────────────────────────────────────────────────────
+
+model User {
+  id              String    @id
+  name            String
+  email           String    @unique
+  passwordHash    String?
+  role            String // ADMIN | EDITOR
+  status          String // ACTIVE | INVITED
+  isOwner         Boolean   @default(false)
+  lastAccessAt    DateTime?
+  inviteTokenHash String?   @unique
+  inviteExpiresAt DateTime?
+  resetTokenHash  String?   @unique
+  resetExpiresAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("users")
+}
+
+// ── Portfólio ────────────────────────────────────────────────────────────────
+
+model Category {
+  id              String    @id
+  name            String
+  slug            String    @unique
+  description     String?
+  visibleInFilter Boolean   @default(true)
+  position        Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  projects        Project[]
+
+  @@map("categories")
+}
+
+model Project {
+  id            String    @id
+  title         String
+  slug          String    @unique
+  summary       String?
+  client        String?
+  date          String? // AAAA-MM-DD
+  location      String?
+  delivery      String?
+  team          String?
+  intro         String?
+  challenge     String?
+  approach      String?
+  result        String?
+  status        String // DRAFT | PUBLISHED
+  featured      Boolean   @default(false)
+  position      Int       @default(0)
+  coverPhotoId  String?
+  categoryId    String
+  category      Category  @relation(fields: [categoryId], references: [id])
+  serviceId     String?
+  updatedById   String?
+  updatedByName String?
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  photos        Photo[]
+
+  @@index([status, position])
+  @@map("projects")
+}
+
+model Photo {
+  id         String   @id
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  storageKey String
+  url        String
+  thumbUrl   String
+  width      Int
+  height     Int
+  caption    String?
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([projectId, position])
+  @@map("photos")
+}
+
+// ── Catálogo de serviços ─────────────────────────────────────────────────────
+
+model Service {
+  id          String   @id
+  name        String
+  description String?
+  includes    String   @default("[]") // JSON string[]
+  priceMode   String // FROM | FIXED | ON_REQUEST
+  priceCents  Int?
+  icon        String // PERSON | RINGS | BRIEFCASE | FOCUS | CAMERA
+  visible     Boolean  @default(true)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("services")
+}
+
+// ── Depoimentos ──────────────────────────────────────────────────────────────
+
+model Testimonial {
+  id         String   @id
+  clientName String
+  jobLabel   String?
+  quote      String
+  rating     Int      @default(5)
+  visible    Boolean  @default(true)
+  position   Int      @default(0)
+  photoUrl   String?
+  projectId  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([projectId])
+  @@map("testimonials")
+}
+
+// ── Caixa de entrada (formulário de contato) ─────────────────────────────────
+
+model ContactMessage {
+  id             String    @id
+  name           String
+  email          String
+  phone          String?
+  workType       String
+  desiredDate    String?
+  message        String
+  readAt         DateTime?
+  answeredAt     DateTime?
+  answeredById   String?
+  answeredByName String?
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([archivedAt, createdAt])
+  @@map("contact_messages")
+}
+
+// ── Configurações do site ────────────────────────────────────────────────────
+
+model SiteSetting {
+  key           String   @id // hero | clients | about | contact | seo
+  value         String // JSON
+  updatedById   String?
+  updatedByName String?
+  updatedAt     DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ── Atividade (auditoria simples do painel) ──────────────────────────────────
+
+model ActivityLog {
+  id          String   @id
+  actorId     String?
+  actorName   String
+  action      String
+  description String
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("activity_logs")
+}
